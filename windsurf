@@ -199,11 +199,18 @@
     '</div>' +
     '</div>' +
     '</div>' +
+    '<div id="wh-otp-container" style="display: none; margin-top: 8px; padding: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 6px;">' +
+    '<div style="display: flex; align-items: center; justify-content: space-between;">' +
+    '<span id="wh-otp-label" style="font-size: 16px; color: white; font-weight: bold;"></span>' +
+    '<button id="wh-copy-otp" title="Copy OTP" style="background: rgba(255,255,255,0.2); border: none; cursor: pointer; font-size: 16px; padding: 6px 10px; border-radius: 4px; color: white;">📋</button>' +
+    '</div>' +
+    '</div>' +
     '<div id="wh-message" class="wh-message" style="display: none;"></div>' +
     '<div class="wh-buttons">' +
     '<button id="wh-generate-email" class="wh-btn wh-btn-success">Generate Random Email</button>' +
     '<button id="wh-fill-random" class="wh-btn wh-btn-primary">Fill Random Info</button>' +
     '<button id="wh-fill-password" class="wh-btn wh-btn-secondary">Fill Password</button>' +
+    '<button id="wh-get-code" class="wh-btn wh-btn-warning">Get Code</button>' +
     '</div>' +
     '</div>' +
     '</div>';
@@ -344,6 +351,10 @@
     'background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);' +
     'color: #0c5460;' +
     'border: 1px solid #bee5eb;' +
+    '}' +
+    '.wh-btn-warning {' +
+    'background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);' +
+    'color: white;' +
     '}';
 
   // Thêm vào DOM
@@ -475,9 +486,138 @@
   // Ẩn Email URL khi người dùng tự nhập email
   document.getElementById('wh-email').addEventListener('input', function () {
     var emailUrlContainer = document.getElementById('wh-email-url-container');
+    var otpContainer = document.getElementById('wh-otp-container');
     // Chỉ ẩn nếu không phải từ script fill
     if (this.value && !this.value.match(/^[a-z]+[a-z]+\d{4}@/)) {
       emailUrlContainer.style.display = 'none';
+      otpContainer.style.display = 'none';
+    }
+  });
+
+  // Hàm gọi API lấy OTP từ email
+  async function fetchOTPFromEmail(domain, username) {
+    try {
+      var response = await fetch('https://tinyhost.shop/api/email/' + domain + '/' + username + '/?page=1&limit=20');
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+      var data = await response.json();
+      return data.emails || [];
+    } catch (error) {
+      console.error('❌ Lỗi khi gọi API email:', error);
+      throw error;
+    }
+  }
+
+  // Hàm extract OTP từ subject
+  function extractOTPFromSubject(subject) {
+    // Subject format: "016339 - Verify your Email with Windsurf"
+    var match = subject.match(/^(\d{6})\s*-/);
+    if (match) {
+      return match[1];
+    }
+    return null;
+  }
+
+  // Get Code button handler
+  document.getElementById('wh-get-code').addEventListener('click', async function () {
+    var getCodeBtn = this;
+    var emailInput = document.getElementById('wh-email');
+    var otpContainer = document.getElementById('wh-otp-container');
+    var otpLabel = document.getElementById('wh-otp-label');
+    var email = emailInput.value;
+
+    if (!email || email.indexOf('@') === -1) {
+      showMessage('⚠️ Vui lòng tạo email trước!', 'warning');
+      return;
+    }
+
+    // Parse email để lấy username và domain
+    var emailParts = email.split('@');
+    var username = emailParts[0];
+    var domain = emailParts[1];
+
+    // Disable button và hiển thị loading
+    getCodeBtn.disabled = true;
+    getCodeBtn.textContent = 'Loading...';
+
+    try {
+      var emails = await fetchOTPFromEmail(domain, username);
+
+      if (emails.length === 0) {
+        showMessage('⚠️ Chưa có email nào trong hộp thư!', 'warning');
+        return;
+      }
+
+      // Tìm email có subject chứa "Verify your Email with Windsurf"
+      var verifyEmail = null;
+      for (var i = 0; i < emails.length; i++) {
+        if (emails[i].subject && emails[i].subject.indexOf('Verify your Email with Windsurf') !== -1) {
+          verifyEmail = emails[i];
+          break;
+        }
+      }
+
+      if (!verifyEmail) {
+        showMessage('⚠️ Không tìm thấy email xác thực Windsurf!', 'warning');
+        return;
+      }
+
+      // Extract OTP từ subject
+      var otp = extractOTPFromSubject(verifyEmail.subject);
+
+      if (!otp) {
+        showMessage('❌ Không thể lấy mã OTP từ email!', 'error');
+        return;
+      }
+
+      // Hiển thị OTP
+      otpLabel.textContent = 'OTP: ' + otp;
+      otpContainer.style.display = 'block';
+      otpContainer.setAttribute('data-otp', otp);
+
+      showMessage('✅ Đã lấy mã OTP thành công!', 'success');
+      console.log('✅ OTP:', otp);
+
+    } catch (error) {
+      console.error('❌ Lỗi:', error);
+      showMessage('❌ Có lỗi xảy ra: ' + error.message, 'error', 5000);
+    } finally {
+      // Enable lại button
+      getCodeBtn.disabled = false;
+      getCodeBtn.textContent = 'Get Code';
+    }
+  });
+
+  // Copy OTP
+  document.getElementById('wh-copy-otp').addEventListener('click', function () {
+    var otpContainer = document.getElementById('wh-otp-container');
+    var otp = otpContainer.getAttribute('data-otp');
+
+    if (otp) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(otp).then(function () {
+          showMessage('✅ Đã copy OTP: ' + otp, 'success');
+        }).catch(function (err) {
+          showMessage('❌ Lỗi khi copy!', 'error');
+        });
+      } else {
+        var textArea = document.createElement('textarea');
+        textArea.value = otp;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showMessage('✅ Đã copy OTP: ' + otp, 'success');
+        } catch (err) {
+          showMessage('❌ Lỗi khi copy!', 'error');
+        }
+        document.body.removeChild(textArea);
+      }
+    } else {
+      showMessage('⚠️ Chưa có OTP để copy!', 'warning');
     }
   });
 
