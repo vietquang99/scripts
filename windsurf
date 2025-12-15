@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Windsurf Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.5
+// @version      1.6
 // @description  Hiển thị form hỗ trợ trên windsurf.com
 // @author       You
 // @match        https://*.windsurf.com/*
