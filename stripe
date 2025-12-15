@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Stripe Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Hiển thị form hỗ trợ trên stripe.com
 // @author       You
 // @match        https://*.stripe.com/*
