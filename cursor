@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cursor Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Hiển thị form hỗ trợ trên cursor.sh
 // @author       You
 // @match        https://*.cursor.sh/*
@@ -203,7 +203,7 @@
         '<button id="wh-generate-email" class="wh-btn wh-btn-success">Generate Random Email</button>' +
         '<button id="wh-fill-random" class="wh-btn wh-btn-primary">Fill Random Info</button>' +
         '<button id="wh-fill-password" class="wh-btn wh-btn-secondary">Fill Password</button>' +
-        '<button id="wh-get-code" class="wh-btn wh-btn-warning">Get Code</button>' +
+        '<button id="wh-fill-otp" class="wh-btn wh-btn-info">Fill OTP</button>' +
         '</div>' +
         '</div>' +
         '</div>';
@@ -224,6 +224,47 @@
         'box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);' +
         'overflow: hidden;' +
         'min-width: 280px;' +
+        'max-width: 320px;' +
+        '}' +
+        '@media (max-width: 480px) {' +
+        '#wh-form-wrapper {' +
+        'min-width: 200px;' +
+        'max-width: 220px;' +
+        '}' +
+        '#wh-header {' +
+        'padding: 8px 10px;' +
+        'font-size: 12px;' +
+        '}' +
+        '#wh-content {' +
+        'padding: 10px;' +
+        '}' +
+        '.wh-field label {' +
+        'font-size: 11px;' +
+        '}' +
+        '.wh-field input {' +
+        'padding: 6px 8px;' +
+        'font-size: 12px;' +
+        '}' +
+        '.wh-btn {' +
+        'padding: 6px 10px;' +
+        'font-size: 11px;' +
+        '}' +
+        '#wh-email-url-container {' +
+        'padding: 6px !important;' +
+        '}' +
+        '#wh-email-url-label {' +
+        'font-size: 10px !important;' +
+        '}' +
+        '#wh-otp-container {' +
+        'padding: 6px !important;' +
+        '}' +
+        '#wh-otp-label {' +
+        'font-size: 12px !important;' +
+        '}' +
+        '.wh-message {' +
+        'padding: 6px 8px;' +
+        'font-size: 10px;' +
+        '}' +
         '}' +
         '#wh-header {' +
         'display: flex;' +
@@ -345,8 +386,8 @@
         'color: #0c5460;' +
         'border: 1px solid #bee5eb;' +
         '}' +
-        '.wh-btn-warning {' +
-        'background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);' +
+        '.wh-btn-info {' +
+        'background: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);' +
         'color: white;' +
         '}';
 
@@ -512,12 +553,11 @@
         return null;
     }
 
-    // Get Code button handler (Cursor - lấy OTP từ body)
-    document.getElementById('wh-get-code').addEventListener('click', async function () {
-        var getCodeBtn = this;
+    // Fill OTP vào các input và tự động submit (Cursor)
+    document.getElementById('wh-fill-otp').addEventListener('click', async function () {
+        var fillOtpBtn = this;
         var emailInput = document.getElementById('wh-email');
         var otpContainer = document.getElementById('wh-otp-container');
-        var otpLabel = document.getElementById('wh-otp-label');
         var email = emailInput.value;
 
         if (!email || email.indexOf('@') === -1) {
@@ -531,8 +571,8 @@
         var domain = emailParts[1];
 
         // Disable button và hiển thị loading
-        getCodeBtn.disabled = true;
-        getCodeBtn.textContent = 'Loading...';
+        fillOtpBtn.disabled = true;
+        fillOtpBtn.textContent = 'Filling...';
 
         try {
             var emails = await fetchOTPFromEmail(domain, username);
@@ -564,21 +604,35 @@
                 return;
             }
 
-            // Hiển thị OTP
+            // Hiển thị OTP trong container
+            var otpLabel = document.getElementById('wh-otp-label');
             otpLabel.textContent = 'OTP: ' + otp;
             otpContainer.style.display = 'block';
             otpContainer.setAttribute('data-otp', otp);
 
-            showMessage('✅ Đã lấy mã OTP thành công!', 'success');
-            console.log('✅ OTP:', otp);
+            // Tìm các input OTP trên trang (Cursor sử dụng class ak-OtpInput)
+            var otpInputs = document.querySelectorAll('.ak-OtpInput input.rt-TextFieldInput');
+
+            if (otpInputs.length === 0) {
+                showMessage('❌ Không tìm thấy các input OTP trên trang!', 'error');
+                return;
+            }
+
+            // Fill OTP vào từng input
+            for (var j = 0; j < otpInputs.length && j < otp.length; j++) {
+                setInputValue(otpInputs[j], otp[j]);
+            }
+
+            console.log('✅ Đã điền OTP:', otp);
+            showMessage('✅ Đã điền OTP thành công! Trang sẽ tự động chuyển hướng.', 'success');
 
         } catch (error) {
             console.error('❌ Lỗi:', error);
             showMessage('❌ Có lỗi xảy ra: ' + error.message, 'error', 5000);
         } finally {
             // Enable lại button
-            getCodeBtn.disabled = false;
-            getCodeBtn.textContent = 'Get Code';
+            fillOtpBtn.disabled = false;
+            fillOtpBtn.textContent = 'Fill OTP';
         }
     });
 
