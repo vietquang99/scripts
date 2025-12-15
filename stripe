@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Stripe Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.4
+// @version      1.5
 // @description  Hiển thị form hỗ trợ trên stripe.com (JS Style Properties để bypass CSP)
 // @author       You
 // @match        https://*.stripe.com/*
+// @match        https://pay.openai.com/*
 // @grant        none
 // @license MIT
 // @copyright 2025, vietquang99 (https://openuserjs.org/users/vietquang99)
