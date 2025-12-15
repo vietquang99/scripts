@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Windsurf Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Hiển thị form hỗ trợ trên windsurf.com
 // @author       You
 // @match        https://*.windsurf.com/*
@@ -211,6 +211,7 @@
     '<button id="wh-fill-random" class="wh-btn wh-btn-primary">Fill Random Info</button>' +
     '<button id="wh-fill-password" class="wh-btn wh-btn-secondary">Fill Password</button>' +
     '<button id="wh-get-code" class="wh-btn wh-btn-warning">Get Code</button>' +
+    '<button id="wh-fill-otp" class="wh-btn wh-btn-info">Fill OTP</button>' +
     '</div>' +
     '</div>' +
     '</div>';
@@ -354,6 +355,10 @@
     '}' +
     '.wh-btn-warning {' +
     'background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);' +
+    'color: white;' +
+    '}' +
+    '.wh-btn-info {' +
+    'background: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);' +
     'color: white;' +
     '}';
 
@@ -586,6 +591,102 @@
       // Enable lại button
       getCodeBtn.disabled = false;
       getCodeBtn.textContent = 'Get Code';
+    }
+  });
+
+  // Fill OTP vào các input và click Create account
+  document.getElementById('wh-fill-otp').addEventListener('click', async function () {
+    var fillOtpBtn = this;
+    var emailInput = document.getElementById('wh-email');
+    var otpContainer = document.getElementById('wh-otp-container');
+    var email = emailInput.value;
+
+    if (!email || email.indexOf('@') === -1) {
+      showMessage('⚠️ Vui lòng tạo email trước!', 'warning');
+      return;
+    }
+
+    // Parse email để lấy username và domain
+    var emailParts = email.split('@');
+    var username = emailParts[0];
+    var domain = emailParts[1];
+
+    // Disable button và hiển thị loading
+    fillOtpBtn.disabled = true;
+    fillOtpBtn.textContent = 'Filling...';
+
+    try {
+      var emails = await fetchOTPFromEmail(domain, username);
+
+      if (emails.length === 0) {
+        showMessage('⚠️ Chưa có email nào trong hộp thư!', 'warning');
+        return;
+      }
+
+      // Tìm email có subject chứa "Verify your Email with Windsurf"
+      var verifyEmail = null;
+      for (var i = 0; i < emails.length; i++) {
+        if (emails[i].subject && emails[i].subject.indexOf('Verify your Email with Windsurf') !== -1) {
+          verifyEmail = emails[i];
+          break;
+        }
+      }
+
+      if (!verifyEmail) {
+        showMessage('⚠️ Không tìm thấy email xác thực Windsurf!', 'warning');
+        return;
+      }
+
+      // Extract OTP từ subject
+      var otp = extractOTPFromSubject(verifyEmail.subject);
+
+      if (!otp) {
+        showMessage('❌ Không thể lấy mã OTP từ email!', 'error');
+        return;
+      }
+
+      // Hiển thị OTP trong container
+      var otpLabel = document.getElementById('wh-otp-label');
+      otpLabel.textContent = 'OTP: ' + otp;
+      otpContainer.style.display = 'block';
+      otpContainer.setAttribute('data-otp', otp);
+
+      // Tìm các input OTP trên trang
+      var otpInputs = document.querySelectorAll('div.flex.justify-between.gap-2 input[maxlength="1"]');
+
+      if (otpInputs.length === 0) {
+        showMessage('❌ Không tìm thấy các input OTP trên trang!', 'error');
+        return;
+      }
+
+      // Fill OTP vào từng input
+      for (var j = 0; j < otpInputs.length && j < otp.length; j++) {
+        setInputValue(otpInputs[j], otp[j]);
+      }
+
+      console.log('✅ Đã điền OTP:', otp);
+
+      // Đợi một chút rồi click button Create account
+      setTimeout(function () {
+        var createAccountBtn = document.querySelector('button[type="submit"].bg-sk-aqua');
+
+        if (createAccountBtn && !createAccountBtn.disabled) {
+          createAccountBtn.click();
+          console.log('✅ Đã click button Create account');
+          showMessage('✅ Đã điền OTP và click Create account!', 'success');
+        } else {
+          console.log('⚠️ Button Create account đang disabled hoặc không tìm thấy');
+          showMessage('✅ Đã điền OTP! Button Create account chưa sẵn sàng.', 'warning');
+        }
+      }, 500);
+
+    } catch (error) {
+      console.error('❌ Lỗi:', error);
+      showMessage('❌ Có lỗi xảy ra: ' + error.message, 'error', 5000);
+    } finally {
+      // Enable lại button
+      fillOtpBtn.disabled = false;
+      fillOtpBtn.textContent = 'Fill OTP';
     }
   });
 
