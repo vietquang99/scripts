@@ -23,7 +23,7 @@
   var DEFAULT_PASSWORD = 'Qwert113@@@';
 
   // Danh sách domain cần ignore
-  var IGNORE_DOMAINS = ['idebattisti.com', 'g2italia.net','rvcisp.com','dj-fs.com','ocramnaig.com'];
+  var IGNORE_DOMAINS = ['idebattisti.com', 'g2italia.net','rvcisp.com','dj-fs.com','ocramnaig.com','deyit.com'];
 
   // Hàm lấy random item từ array
   function getRandomItem(arr) {
