@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Windsurf Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.8
+// @version      1.9
 // @description  Hiển thị form hỗ trợ trên windsurf.com
 // @author       You
 // @match        https://*.windsurf.com/*
@@ -88,10 +88,12 @@
         continue;
       }
 
-      // Lọc các domain không thuộc ignore list
-      var validDomains = domains.filter(function (domain) {
-        return IGNORE_DOMAINS.indexOf(domain) === -1;
-      });
+      // Lọc các domain không thuộc ignore list (chỉ kiểm tra nếu IGNORE_DOMAINS có giá trị)
+      var validDomains = IGNORE_DOMAINS.length > 0
+        ? domains.filter(function (domain) {
+          return IGNORE_DOMAINS.indexOf(domain) === -1;
+        })
+        : domains;
 
       if (validDomains.length > 0) {
         // Lấy random 1 domain từ danh sách hợp lệ
