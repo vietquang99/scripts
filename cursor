@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cursor Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.9
+// @version      1.10
 // @description  Hiển thị form hỗ trợ trên cursor.sh
 // @author       You
 // @match        https://*.cursor.sh/*
@@ -61,17 +61,13 @@
 
     // Hàm gọi API lấy random domains
     async function fetchRandomDomains() {
-        try {
-            var response = await fetch('https://nguyenngocanhtu.com/api/random-domains?limit=3');
-            if (!response.ok) {
-                throw new Error('API request failed');
-            }
-            var data = await response.json();
-            return data.domains || [];
-        } catch (error) {
-            console.error('❌ Lỗi khi gọi API:', error);
-            return [];
-        }
+        return [
+            'nguyenngocanhtu.com',
+            'heavevietnam.website',
+            'nguyenngocanhtu.software',
+            'nguyenngocanhtu.click',
+            'nguyenngocanhtu.works'
+        ];
     }
 
     // Hàm lấy domain hợp lệ (không thuộc ignore list)
