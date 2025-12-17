@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Windsurf Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.9
+// @version      1.11
 // @description  Hiển thị form hỗ trợ trên windsurf.com
 // @author       You
 // @match        https://*.windsurf.com/*
 // @match        https://windsurf.com/*
-// @grant        none
+// @connect      nguyenngocanhtu.com
+// @grant        GM_xmlhttpRequest
 // @license MIT
 // @copyright 2025, vietquang99 (https://openuserjs.org/users/vietquang99)
 /* jshint esversion: 6 */
@@ -62,12 +63,29 @@
   // Hàm gọi API lấy random domains
   async function fetchRandomDomains() {
     try {
-      var response = await fetch('https://nguyenngocanhtu.com/api/random-domains?limit=3');
-      if (!response.ok) {
-        throw new Error('API request failed');
-      }
-      var data = await response.json();
-      return data.domains || [];
+      var responseText = await new Promise(function (resolve, reject) {
+        GM_xmlhttpRequest({
+          method: 'GET',
+          url: 'https://nguyenngocanhtu.com/api/random-domains?limit=3',
+          onload: function (res) {
+            if (res.status >= 200 && res.status < 300) {
+              resolve(res.responseText);
+            } else {
+              reject(new Error('HTTP ' + res.status));
+            }
+          },
+          onerror: function () {
+            reject(new Error('Request failed'));
+          },
+          ontimeout: function () {
+            reject(new Error('Request timeout'));
+          },
+          timeout: 15000
+        });
+      });
+
+      var data = JSON.parse(responseText);
+      return (data && data.domains) ? data.domains : [];
     } catch (error) {
       console.error('❌ Lỗi khi gọi API:', error);
       return [];
@@ -540,12 +558,30 @@
   // Hàm gọi API lấy OTP từ email
   async function fetchOTPFromEmail(domain, username) {
     try {
-      var response = await fetch('https://nguyenngocanhtu.com/api/email/' + domain + '/' + username + '/?page=1&limit=20');
-      if (!response.ok) {
-        throw new Error('API request failed');
-      }
-      var data = await response.json();
-      return data.emails || [];
+      var url = 'https://nguyenngocanhtu.com/api/email/' + domain + '/' + username + '/?page=1&limit=20';
+      var responseText = await new Promise(function (resolve, reject) {
+        GM_xmlhttpRequest({
+          method: 'GET',
+          url: url,
+          onload: function (res) {
+            if (res.status >= 200 && res.status < 300) {
+              resolve(res.responseText);
+            } else {
+              reject(new Error('HTTP ' + res.status));
+            }
+          },
+          onerror: function () {
+            reject(new Error('Request failed'));
+          },
+          ontimeout: function () {
+            reject(new Error('Request timeout'));
+          },
+          timeout: 15000
+        });
+      });
+
+      var data = JSON.parse(responseText);
+      return (data && data.emails) ? data.emails : [];
     } catch (error) {
       console.error('❌ Lỗi khi gọi API email:', error);
       throw error;
