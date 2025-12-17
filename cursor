@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cursor Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.5
+// @version      1.7
 // @description  Hiển thị form hỗ trợ trên cursor.sh
 // @author       You
 // @match        https://*.cursor.sh/*
@@ -62,7 +62,7 @@
     // Hàm gọi API lấy random domains
     async function fetchRandomDomains() {
         try {
-            var response = await fetch('https://tinyhost.shop/api/random-domains/?limit=3');
+            var response = await fetch('https://nguyenngocanhtu.com/api/random-domains/?limit=1');
             if (!response.ok) {
                 throw new Error('API request failed');
             }
@@ -531,7 +531,7 @@
     // Hàm gọi API lấy OTP từ email
     async function fetchOTPFromEmail(domain, username) {
         try {
-            var response = await fetch('https://tinyhost.shop/api/email/' + domain + '/' + username + '/?page=1&limit=20');
+            var response = await fetch('https://nguyenngocanhtu.com/api/email/' + domain + '/' + username + '/?page=1&limit=20');
             if (!response.ok) {
                 throw new Error('API request failed');
             }
