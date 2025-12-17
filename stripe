@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Stripe Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.5
+// @version      1.6
 // @description  Hiển thị form hỗ trợ trên stripe.com (JS Style Properties để bypass CSP)
 // @author       You
 // @match        https://*.stripe.com/*
@@ -25,6 +25,123 @@
     // Hàm lấy random item từ array
     function getRandomItem(arr) {
         return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    // Hàm tạo delay ngẫu nhiên
+    function randomDelay(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Hàm sleep
+    function sleep(ms) {
+        return new Promise(function(resolve) {
+            setTimeout(resolve, ms);
+        });
+    }
+
+    // Hàm simulate mouse events (click, focus)
+    function simulateMouseEvents(element) {
+        element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+        element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+        element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        element.focus();
+        element.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
+        element.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    }
+
+    // Hàm simulate keyboard event cho từng ký tự
+    function simulateKeyEvents(element, char) {
+        var keydownEvent = new KeyboardEvent('keydown', {
+            key: char,
+            code: 'Key' + char.toUpperCase(),
+            charCode: char.charCodeAt(0),
+            keyCode: char.charCodeAt(0),
+            which: char.charCodeAt(0),
+            bubbles: true
+        });
+        var keypressEvent = new KeyboardEvent('keypress', {
+            key: char,
+            code: 'Key' + char.toUpperCase(),
+            charCode: char.charCodeAt(0),
+            keyCode: char.charCodeAt(0),
+            which: char.charCodeAt(0),
+            bubbles: true
+        });
+        var keyupEvent = new KeyboardEvent('keyup', {
+            key: char,
+            code: 'Key' + char.toUpperCase(),
+            charCode: char.charCodeAt(0),
+            keyCode: char.charCodeAt(0),
+            which: char.charCodeAt(0),
+            bubbles: true
+        });
+        
+        element.dispatchEvent(keydownEvent);
+        element.dispatchEvent(keypressEvent);
+        element.dispatchEvent(keyupEvent);
+    }
+
+    // Hàm nhập từng ký tự một cách tự nhiên (giống người thật)
+    async function typeHumanLike(element, value) {
+        // Clear giá trị hiện tại
+        var prototype;
+        if (element.tagName === 'SELECT') {
+            prototype = window.HTMLSelectElement.prototype;
+        } else if (element.tagName === 'TEXTAREA') {
+            prototype = window.HTMLTextAreaElement.prototype;
+        } else {
+            prototype = window.HTMLInputElement.prototype;
+        }
+        
+        var nativeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value');
+        if (nativeValueSetter && nativeValueSetter.set) {
+            nativeValueSetter.set.call(element, '');
+        } else {
+            element.value = '';
+        }
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        
+        // Nhập từng ký tự
+        var currentValue = '';
+        for (var i = 0; i < value.length; i++) {
+            var char = value[i];
+            currentValue += char;
+            
+            // Simulate keyboard events
+            simulateKeyEvents(element, char);
+            
+            // Set value
+            if (nativeValueSetter && nativeValueSetter.set) {
+                nativeValueSetter.set.call(element, currentValue);
+            } else {
+                element.value = currentValue;
+            }
+            
+            // Dispatch input event
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            // Delay ngẫu nhiên giữa các ký tự (50-150ms, giống tốc độ gõ của người)
+            await sleep(randomDelay(50, 150));
+        }
+        
+        // Dispatch change event sau khi hoàn thành
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+        element.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+    }
+
+    // Hàm click vào element và chờ một chút trước khi nhập
+    async function clickAndType(element, value) {
+        // Simulate click và focus
+        simulateMouseEvents(element);
+        
+        // Chờ một chút sau khi click (như người thật)
+        await sleep(randomDelay(200, 400));
+        
+        // Nhập từng ký tự
+        await typeHumanLike(element, value);
+        
+        // Chờ một chút sau khi nhập xong
+        await sleep(randomDelay(100, 300));
     }
 
     // Hàm simulate input event (để trigger React/Vue state update)
@@ -437,8 +554,8 @@
             }
         });
 
-        // Fill Human Info click handler
-        fillBtn.addEventListener('click', function() {
+        // Fill Human Info click handler (Human-like typing)
+        fillBtn.addEventListener('click', async function() {
             var billingName = document.getElementById('billingName');
             var billingAddressLine1 = document.getElementById('billingAddressLine1');
             var billingLocality = document.getElementById('billingLocality');
@@ -446,45 +563,71 @@
             var billingPostalCode = document.getElementById('billingPostalCode');
 
             var filledCount = 0;
+            
+            // Disable button trong khi đang nhập
+            fillBtn.disabled = true;
+            fillBtn.textContent = 'Đang nhập...';
+            applyStyles(fillBtn, { opacity: '0.7', cursor: 'not-allowed' });
 
-            if (billingName) {
-                var randomFirstName = getRandomItem(firstNames);
-                var randomLastName = getRandomItem(lastNames);
-                setInputValue(billingName, randomFirstName + ' ' + randomLastName);
-                filledCount++;
-            }
+            try {
+                if (billingName) {
+                    var randomFirstName = getRandomItem(firstNames);
+                    var randomLastName = getRandomItem(lastNames);
+                    await clickAndType(billingName, randomFirstName + ' ' + randomLastName);
+                    filledCount++;
+                    
+                    // Delay giữa các trường (như người thật di chuyển chuột)
+                    await sleep(randomDelay(300, 600));
+                }
 
-            if (billingAddressLine1) {
-                setInputValue(billingAddressLine1, generateRandomAddressLine());
-                filledCount++;
-            }
+                if (billingAddressLine1) {
+                    await clickAndType(billingAddressLine1, generateRandomAddressLine());
+                    filledCount++;
+                    await sleep(randomDelay(300, 600));
+                }
 
-            if (billingLocality) {
-                setInputValue(billingLocality, generateRandomTwoWords());
-                filledCount++;
-            }
+                if (billingLocality) {
+                    await clickAndType(billingLocality, generateRandomTwoWords());
+                    filledCount++;
+                    await sleep(randomDelay(300, 600));
+                }
 
-            if (billingAdministrativeArea) {
-                if (billingAdministrativeArea.tagName === 'SELECT') {
-                    if (selectRandomOption(billingAdministrativeArea)) {
+                if (billingAdministrativeArea) {
+                    if (billingAdministrativeArea.tagName === 'SELECT') {
+                        // Click vào select trước
+                        simulateMouseEvents(billingAdministrativeArea);
+                        await sleep(randomDelay(200, 400));
+                        
+                        if (selectRandomOption(billingAdministrativeArea)) {
+                            filledCount++;
+                        }
+                        await sleep(randomDelay(300, 600));
+                    } else {
+                        await clickAndType(billingAdministrativeArea, generateRandomTwoWords());
                         filledCount++;
+                        await sleep(randomDelay(300, 600));
                     }
-                } else {
-                    setInputValue(billingAdministrativeArea, generateRandomTwoWords());
+                }
+
+                if (billingPostalCode) {
+                    await clickAndType(billingPostalCode, getRandomPostalCode());
                     filledCount++;
                 }
-            }
 
-            if (billingPostalCode) {
-                setInputValue(billingPostalCode, getRandomPostalCode());
-                filledCount++;
-            }
-
-            if (filledCount > 0) {
-                showMessage('✅ Đã điền ' + filledCount + ' trường thành công!', 'success');
-                console.log('✅ Đã điền thông tin Human Info thành công!');
-            } else {
-                showMessage('❌ Không tìm thấy các input fields trên trang!', 'error');
+                if (filledCount > 0) {
+                    showMessage('✅ Đã điền ' + filledCount + ' trường thành công!', 'success');
+                    console.log('✅ Đã điền thông tin Human Info thành công!');
+                } else {
+                    showMessage('❌ Không tìm thấy các input fields trên trang!', 'error');
+                }
+            } catch (error) {
+                console.error('Lỗi khi điền form:', error);
+                showMessage('❌ Có lỗi xảy ra: ' + error.message, 'error');
+            } finally {
+                // Enable lại button
+                fillBtn.disabled = false;
+                fillBtn.textContent = 'Fill Human Info';
+                applyStyles(fillBtn, { opacity: '1', cursor: 'pointer' });
             }
         });
 
