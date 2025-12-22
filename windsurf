@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Windsurf Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.11
+// @version      1.12
 // @description  Hiển thị form hỗ trợ trên windsurf.com
 // @author       You
 // @match        https://*.windsurf.com/*
 // @match        https://windsurf.com/*
-// @connect      nguyenngocanhtu.com
+// @connect      tinyhost.shop
 // @grant        GM_xmlhttpRequest
 // @license MIT
 // @copyright 2025, vietquang99 (https://openuserjs.org/users/vietquang99)
@@ -66,7 +66,7 @@
       var responseText = await new Promise(function (resolve, reject) {
         GM_xmlhttpRequest({
           method: 'GET',
-          url: 'https://nguyenngocanhtu.com/api/random-domains?limit=3',
+          url: 'https://tinyhost.shop/api/random-domains/?limit=3',
           onload: function (res) {
             if (res.status >= 200 && res.status < 300) {
               resolve(res.responseText);
@@ -558,7 +558,7 @@
   // Hàm gọi API lấy OTP từ email
   async function fetchOTPFromEmail(domain, username) {
     try {
-      var url = 'https://nguyenngocanhtu.com/api/email/' + domain + '/' + username + '/?page=1&limit=20';
+      var url = 'https://tinyhost.shop/api/email/' + domain + '/' + username + '/?page=1&limit=20';
       var responseText = await new Promise(function (resolve, reject) {
         GM_xmlhttpRequest({
           method: 'GET',
