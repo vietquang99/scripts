@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Windsurf Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.12
+// @version      1.13
 // @description  Hiển thị form hỗ trợ trên windsurf.com
 // @author       You
 // @match        https://*.windsurf.com/*
@@ -535,10 +535,10 @@
   // Copy Email
   document.getElementById('wh-copy-email').addEventListener('click', function () {
     var emailInput = document.getElementById('wh-email');
-    var email = 'tinyhost.shop/' + emailInput.value;
+    var info = `Email: ${emailInput.value} | Password: Qwert113@@@ | Email: tinyhost.shop/${emailInput.value}`;
 
     if (email) {
-      copyToClipboard(email);
+      copyToClipboard(info);
     } else {
       showMessage('⚠️ Chưa có email để copy!', 'warning');
     }
