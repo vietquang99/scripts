@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Stripe Form Helper
 // @namespace    http://tampermonkey.net/
-// @version      1.6
+// @version      1.7
 // @description  Hiển thị form hỗ trợ trên stripe.com (JS Style Properties để bypass CSP)
 // @author       You
 // @match        https://*.stripe.com/*
@@ -577,35 +577,35 @@
                     filledCount++;
                     
                     // Delay giữa các trường (như người thật di chuyển chuột)
-                    await sleep(randomDelay(300, 600));
+                    await sleep(randomDelay(100, 200));
                 }
 
                 if (billingAddressLine1) {
                     await clickAndType(billingAddressLine1, generateRandomAddressLine());
                     filledCount++;
-                    await sleep(randomDelay(300, 600));
+                    await sleep(randomDelay(100, 200));
                 }
 
                 if (billingLocality) {
                     await clickAndType(billingLocality, generateRandomTwoWords());
                     filledCount++;
-                    await sleep(randomDelay(300, 600));
+                    await sleep(randomDelay(100, 200));
                 }
 
                 if (billingAdministrativeArea) {
                     if (billingAdministrativeArea.tagName === 'SELECT') {
                         // Click vào select trước
                         simulateMouseEvents(billingAdministrativeArea);
-                        await sleep(randomDelay(200, 400));
+                        await sleep(randomDelay(100, 200));
                         
                         if (selectRandomOption(billingAdministrativeArea)) {
                             filledCount++;
                         }
-                        await sleep(randomDelay(300, 600));
+                        await sleep(randomDelay(100, 200));
                     } else {
                         await clickAndType(billingAdministrativeArea, generateRandomTwoWords());
                         filledCount++;
-                        await sleep(randomDelay(300, 600));
+                        await sleep(randomDelay(100, 200));
                     }
                 }
 
